@@ -1,20 +1,25 @@
 <template>
   <div>
+    <!-- Componente da barra de pesquisa -->
     <search-bar @search-results="handleSearchResults"></search-bar>
-    <div v-if="searchResults.length > 0">
+
+    <!-- Resultados da pesquisa -->
+    <div class="search-results" v-if="searchResults.length > 0">
       <h2>Resultados da busca:</h2>
-      <div v-for="image in searchResults" :key="image.id">
-        <img :src="image.url" :alt="image.id">
+      <div v-for="image in searchResults" :key="image.id" class="search-result">
+        <img :src="image.url" :alt="image.id" class="search-result-image">
         <button @click="toggleFavorite(image)" :disabled="isProcessing">
-          {{ isFavorited(image.id) ? 'Desfavoritar' : 'Favoritar' }}
+          {{ isFavorited(image.id) ? 'Desfavoritar ❤' : 'Favoritar 🤍' }}
         </button>
       </div>
     </div>
+
+    <!-- Seção de imagens favoritas -->
     <div>
       <h2>Favoritos:</h2>
       <div v-if="favorites.length === 0">Nenhuma imagem favoritada</div>
-      <div v-for="image in favorites" :key="image.giphy_id">
-        <img :src="image.url" :alt="image.giphy_id">
+      <div v-for="image in favorites" :key="image.giphy_id" class="favorite">
+        <img :src="image.url" :alt="image.giphy_id" class="favorite-image">
         <button @click="toggleFavorite(image)" :disabled="isProcessing">Desfavoritar</button>
       </div>
     </div>
@@ -41,60 +46,75 @@ export default {
       this.searchResults = results;
     },
     async fetchFavorites() {
-  try {
-    console.log('Buscando favoritos...');
-    const response = await axios.get('http://localhost:3000/api/favorites');
-    console.log('Dados dos favoritos:', response.data);
-    this.favorites = response.data.map(fav => ({
-      ...fav,
-      url: `https://media.giphy.com/media/${fav.giphy_id}/giphy.gif`
-    }));
-    console.log('Favoritos carregados:', this.favorites);
-  } catch (error) {
-    console.error('Erro ao buscar favoritos:', error);
-  }
-},
-    async toggleFavorite(image) {
-  try {
-    this.isProcessing = true;
-    const favorited = this.isFavorited(image.id || image.giphy_id);
-    console.log('Imagem favoritada?', favorited);
-    console.log('ID da imagem:', image.id || image.giphy_id);
-    if (favorited) {
-      console.log(`Desfavoritando imagem: ${image.id || image.giphy_id}`);
-        console.log('cheguei aqui')
-        await axios.delete(`http://localhost:3000/api/favorites/${image.id}`);
-        console.log('Imagem desfavoritada removida da lista:', this.favorites);
-      
-    } else {
-      console.log(`Favoritando imagem: ${image.id || image.giphy_id}`);
-      const response = await axios.post('http://localhost:3000/api/favorites', { giphyId: image.id || image.giphy_id });
-      
-      // Adicionando a imagem favoritada apenas se a solicitação for bem-sucedida
-      if (response.status === 200) {
-        this.favorites.push({
-          giphy_id: image.id || image.giphy_id,
-          url: image.url
-        });
+      try {
+        const response = await axios.get('http://localhost:3000/api/favorites');
+        this.favorites = response.data.map(fav => ({
+          ...fav,
+          url: `https://media.giphy.com/media/${fav.giphy_id}/giphy.gif`
+        }));
+      } catch (error) {
+        console.error('Erro ao buscar favoritos:', error);
       }
+    },
+    async toggleFavorite(image) {
+      try {
+        this.isProcessing = true;
+        const favorited = this.isFavorited(image.id || image.giphy_id);
+        if (favorited) {
+          await axios.delete(`http://localhost:3000/api/favorites/${image.id}`);
+        } else {
+          const response = await axios.post('http://localhost:3000/api/favorites', { giphyId: image.id || image.giphy_id });
+          if (response.status === 200) {
+            this.favorites.push({
+              giphy_id: image.id || image.giphy_id,
+              url: image.url
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao favoritar/desfavoritar imagem:', error.message);
+      } finally {
+        this.isProcessing = false;
+        this.fetchFavorites();
+      }
+    },
+    isFavorited(id) {
+      const idString = id.toString();
+      return this.favorites.some(fav => fav.id == idString);
     }
-  } catch (error) {
-    console.error('Erro ao favoritar/desfavoritar imagem:', error.message);
-  } finally {
-    this.isProcessing = false;
-    // Atualizar a lista de favoritos após adicionar/remover um favorito
-    this.fetchFavorites();
-  }
-},
-isFavorited(id) {
-    const idString = id.toString(); // Convertendo o ID para string
-    console.log('ID da imagem:', idString);
-    console.log('Favoritos:', this.favorites);
-    return this.favorites.some(fav => fav.id == idString); // Usando == na comparação
-}
   },
   mounted() {
     this.fetchFavorites();
   }
 };
 </script>
+
+<style>
+  .search-results {
+    margin-top: 20px;
+  }
+
+  .search-result {
+    display: inline-block;
+    margin-right: 150px;
+    margin-bottom: 150px;
+  }
+
+  .search-result img {
+    width: 300px;
+    height: 300px;
+    cursor: pointer;
+  }
+
+  .favorite {
+    display: inline-block;
+    margin-right: 150px;
+    margin-bottom: 150px;
+  }
+
+  .favorite img {
+    width: 300px;
+    height: 300px;
+    cursor: pointer;
+  }
+</style>
