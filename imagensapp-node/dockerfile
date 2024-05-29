@@ -1,0 +1,20 @@
+FROM node:lts-alpine as build-stage
+WORKDIR /app
+COPY package*.json ./
+RUN npm cache clean --force && npm install --retry 3
+COPY . .
+RUN npm run build
+FROM nginx:alpine
+COPY --from=build-stage /app/nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY --from=build-stage /app/dist /usr/share/nginx/html
+EXPOSE 80
+EXPOSE 8080
+RUN apk add --no-cache nodejs npm
+WORKDIR /usr/share/nginx/html
+COPY --from=build-stage /app/dist /usr/share/nginx/html
+COPY --from=build-stage /app /app
+COPY --from=build-stage /app/database.db /app/database.db
+RUN npm install sqlite3
+WORKDIR /app
+RUN node database.js
+CMD ["sh", "-c", "node /app/server.js & nginx -g 'daemon off;'"]

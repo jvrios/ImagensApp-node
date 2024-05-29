@@ -1,13 +1,15 @@
+
+
 <template>
-    <div>
-      <input type="text" v-model="searchQuery" placeholder="Digite sua busca">
-      <button @click="search">Buscar</button>
+    <div class="searchbar">
+      <input type="text" v-model="searchQuery" placeholder="Digite sua busca" >
+      <button @click="search" class="search-button"><i class="fas fa-search"></i></button>
     </div>
   </template>
   
   <script>
   import axios from 'axios';
-  
+  import '@fortawesome/fontawesome-free/css/all.css';
   export default {
     data() {
       return {
@@ -16,7 +18,6 @@
     },
     methods: {
   async search() {
-    console.log('Clicou no botão de busca');
     console.log('Realizando busca com o seguinte query:', this.searchQuery);
     try {
       const response = await axios.get('http://localhost:3000/api/images/search', {
@@ -39,4 +40,35 @@
 }
   };
   </script>
+
+  <style>
+    *{box-sizing: border-box}
+    .searchbar {
+    display: flex;
+    align-items: center;
+    color: white;
+    background-color: rgb(18, 18, 18);
+    width: 100%;
+    border-radius: 20px; 
+    padding: 10px; 
+    border: 1px solid #ccc; /* Add border for better visibility */
+    position: relative;
+    }
+    input{
+      flex: 1;
+      background-color: transparent;
+      border: none;
+      color : white;
+    }
+  .search-button {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+  }
+  .search-button i {
+    color: white; /* Adjust color as needed */
+    font-size: 16px; /* Adjust size as needed */
+  }
+
+  </style>
   
